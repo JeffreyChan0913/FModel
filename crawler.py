@@ -23,5 +23,5 @@ for ticker in tickers:
     if len(data.index) == 0:
         continue
     data = data.reset_index()
-    data['ret'] = (data['Adj Close'] / data['Adj Close'].shift(1) - 1)
+    data['ret'] = data['Adj Close'].pct_change() 
     data[['Date', 'ret']].to_csv('data/' + ticker + '.csv', index=False)
