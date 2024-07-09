@@ -1,8 +1,8 @@
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
-required.pkgs <- c("quantmod", "reticulate", "dplyr")
+required.pkgs <- c("quantmod", "reticulate", "dplyr", "tidyverse")
 
-pacman::t_load(required.pkgs, character.only=T)
+pacman::p_load(required.pkgs, character.only=T)
 
 download.data <- function( vector.of.tickers ){
   
@@ -28,7 +28,7 @@ monte.carlo.portfolio <- function(
     
     n,
     
-    iteration = 1000000
+    iteration = 10000000
     
 ) {
   
@@ -38,7 +38,7 @@ monte.carlo.portfolio <- function(
   
   for(i in 1:iteration){
     
-    w           <- runif( n,0,1000 )
+    w           <- runif( n,0,8888 )
     
     w           <- w / sum( w )
     
@@ -52,7 +52,9 @@ monte.carlo.portfolio <- function(
   
   colnames( result ) <- c( paste0( "w",1:n ), "ret", "sigma", "sharperatio" )
   
+  result             <- as.data.frame( result )
   return ( result )
+  
 }
 
 stock.data <- function(
@@ -77,7 +79,7 @@ stock.data <- function(
   
   get.tickers <- c()
   
-  for( ticker in tickers {
+  for( ticker in tickers ) {
     
     file      <- paste( ticker,"csv", sep='.' )
     
@@ -157,7 +159,7 @@ process.data <- function(
 
 tickers <- c(
               "NVDA", "AMD", "TSM", "ASML", "EIX",
-              "DUK","AAPL", "TSLA", "CVS","SCI"
+              "DUK","AAPL", "TSLA", "CVS", "SCI"
             )
 
 stock.data( tickers, update=T )
@@ -179,4 +181,19 @@ result.mc                 <- monte.carlo.portfolio( stock.stats$mu,
                                                     length( tickers )
                                                    )
 
-plot( result.mc[,"sigma"], result.mc[, "ret"] )
+frontier.data             <- result.mc[ c("sigma", "ret") ]
+
+frontier.data$ret         <- frontier.data$ret * 100
+
+frontier.data             <- frontier.data[ order( frontier.data$sigma ), ]
+
+frontier.data             <- frontier.data[ !duplicated( frontier.data$sigma, 
+                                                         fromLast = T), ]
+
+ggplot( frontier.data, aes( x=sigma, y=ret ) ) +
+  
+  geom_point( color="steelblue", alpha=0.3) + 
+  
+  labs( x="Portfolio Standard Deviation", y="Portfolio Return") +
+  
+  theme_minimal( )
