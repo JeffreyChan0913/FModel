@@ -28,17 +28,17 @@ monte.carlo.portfolio <- function(
     
     n,
     
-    iteration = 10000000
+    iteration = 1000000
     
 ) {
   
-  risk.free.rate  <- 0.05375
+  risk.free.rate  <- 0.0428
   
   result          <- matrix( NA, nrow=iteration, ncol=n+3 )
   
   for(i in 1:iteration){
     
-    w           <- runif( n,0,8888 )
+    w           <- runif( n, 0, 1000 )
     
     w           <- w / sum( w )
     
@@ -115,13 +115,15 @@ process.data <- function(
   
   n         <- length( tickers )
   
-  mu        <- c()
+  mu        <- numeric(n)
   
-  var       <- c()
+  var       <- numeric(n)
   
-  cov.data  <- c()
+  cov.data  <- list()
   
-  for( ticker in tickers ){
+  for( i in 1:n ){
+    
+    ticker            <- tickers[i]
     
     ticker.file.path  <- file.path( folder, paste( ticker, "csv", sep="." ) )
     
@@ -133,17 +135,19 @@ process.data <- function(
                                  Date >= startDate,
                                  Date < endDate )
     
-    cov.data          <- cbind( cov.data, ticker.data$ret )
+    cov.data[[i]]     <- ticker.data$ret
     
-    ticker.mu         <- mean( ticker.data$ret, na.rm=T )
+    ticker.mu         <- mean( ticker.data$ret, na.rm=T ) * 252
     
-    ticker.var        <- var( ticker.data$ret, na.rm=T )
+    ticker.var        <- var( ticker.data$ret, na.rm=T ) * 252
     
-    mu                <- c( mu, ticker.mu )
+    mu[i]             <- ticker.mu
     
-    var               <- c( var, ticker.var )
+    var[i]            <- ticker.var
     
   }
+  
+  cov.data        <- do.call( cbind, cov.data )
   
   df              <- data.frame( "mu"=mu,"var"=var, row.names=tickers )
   
@@ -156,11 +160,7 @@ process.data <- function(
 }
 
 # tickers <- c("NVDA", "AMD", "TSM", "ASML", "EIX","DUK","AAPL", "TSLA", "CVS","SCI", "UNH","CSV")
-
-tickers <- c(
-              "NVDA", "AMD", "TSM", "ASML", "EIX",
-              "DUK","AAPL", "TSLA", "CVS", "SCI"
-            )
+tickers <- c("NVDA", "AMD", "TSM", "ASML", "EIX", "DUK","AAPL", "TSLA", "CVS", "MU")
 
 stock.data( tickers, update=T )
 
