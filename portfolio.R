@@ -56,9 +56,9 @@ system.time(
                                                    
                                                    length( tickers ),
                                                    
-                                                   iteration = 1000,
+                                                   iteration = 18000000,
                                                    
-                                                   n.cores = 10
+                                                   n.cores = 12
                                                    
   )
   
