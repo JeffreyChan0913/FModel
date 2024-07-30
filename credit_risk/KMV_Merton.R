@@ -77,13 +77,7 @@ run <- function(
   sigma.V <- sigma.E
 
   kmv.result <- kmv.iterative( E, D, V0, sigma.V, t, r, iterations )
-  
-  V.final <- kmv.result$V
-  
-  sigma.V.final <- kmv.result$S
-  
-  DD <- kmv.result$DD
-  
+
   PD <- kmv.result$PD
 
   cat( "Probability of Default (PD):", PD, "\n" )

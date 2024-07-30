@@ -60,7 +60,7 @@ for( ticker in tickers ){
 
 kmv.data$marketcap23 <- marketcap23
 
-kmv.data$equity23 <- kmv.data$Total.Assets.2023 - kmv.data$Current.Liabilities.2023
+kmv.data$equity23    <- kmv.data$Total.Assets.2023 - kmv.data$Current.Liabilities.2023
 
 kmv.data <- kmv.data %>%
             
@@ -77,7 +77,9 @@ kmv.data <- kmv.data %>%
                     )
 
 for( ticker in tickers ){
-
+  
+  cat( ticker, ": " )
+  
   run( kmv.data, ticker )  
   
 }
