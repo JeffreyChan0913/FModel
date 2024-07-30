@@ -21,3 +21,9 @@ The main components of this project are:
 
 4. **Interrupted Time Series**
    - Analysis of stock price changes as an effect of the release of ChatGPT.
+
+# Usage
+Each section operates disjointly. To execute the code, please run the code with its folder as the working directory.
+
+
+
