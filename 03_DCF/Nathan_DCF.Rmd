@@ -1,0 +1,318 @@
+---
+title: "Stat 417 Project DCF"
+author: "Nathan Lam"
+date: "2024-07-31"
+output:
+  pdf_document: default
+---
+
+
+```{r}
+
+library( quantmod )
+
+library( finreportr )
+
+library( dplyr )
+
+library( randomForest )
+
+library( ggplot2 )
+
+abs_path <- 'C:/Users/nthnt/Nextcloud/02 Projects/School/2024 Summer UCLA Stat 417 - Stat Models in Finance/FModel/'
+
+```
+
+
+
+
+```{r}
+
+scale_scaler <- function(
+    # standardizes a vector while retaining the original + transformations used
+    # returns: dataframe of old vec, transformed vec, and centering/scaling factors used
+    x_vec # array: array of numerics
+    )
+  {
+  
+  center  <- mean( x_vec )
+  
+  scale   <- sd( x_vec )
+  
+  scaled  <- ( x_vec - center ) / scale
+  
+  results <- data.frame(
+    no.transform = x_vec ,
+    transformed  = scaled , 
+    center       = center ,
+    scale        = scale
+  )
+  
+  return( results )
+  
+}
+
+set.seed( 1 )
+
+cash_flow                     <- read.csv( "../csv_data/cash_flow.csv" )
+
+cash_flow$this.year           <- as.numeric( substr( cash_flow$index , 1 , 4 ) )
+
+cash_flow$prev.year           <- cash_flow$this.year - 1
+
+cash_flow_curr_prev           <- merge( cash_flow, cash_flow,
+                                        by.x = c( "Ticker" , "this.year" ) ,
+                                        by.y = c( "Ticker" , "prev.year" ) )
+
+cash_flow_curr_prev           <- cash_flow_curr_prev[ c( "Ticker" , 
+                                                         "this.year" ,
+                                                         "this.year.y" ,
+                                                         "Free.Cash.Flow.x" ,
+                                                         "Free.Cash.Flow.y" ) ]
+
+colnames(cash_flow_curr_prev) <- c("Ticker", 
+                                   "prev.year",
+                                   "this.year",
+                                   "prev.CF",
+                                   "this.CF")
+
+cash_flow_curr_prev$Ticker    <- as.factor( cash_flow_curr_prev$Ticker )
+
+
+
+
+prev.CF_scaled                     <- scale_scaler( cash_flow_curr_prev$prev.CF )
+
+cash_flow_curr_prev$prev.CF.scaled <- prev.CF_scaled$transformed
+
+this.CF_scaled                     <- scale_scaler( cash_flow_curr_prev$this.CF )
+
+cash_flow_curr_prev$this.CF.scaled <- this.CF_scaled$transformed
+
+
+
+
+train_index <- sample( 1:nrow( cash_flow_curr_prev ) , 
+                      nrow( cash_flow_curr_prev ) * 0.7 , 
+                      replace = F )
+
+train       <- cash_flow_curr_prev[ train_index , ]
+
+test        <- cash_flow_curr_prev[ -train_index , ]
+
+
+  
+
+m1 <- lm( formula = this.CF.scaled ~ Ticker + this.year + prev.CF.scaled , 
+          data = train )
+
+m2 <- randomForest( this.CF.scaled ~ Ticker + this.year + prev.CF.scaled , 
+                    data = train ,
+                    importance = TRUE ,
+                    proximity = TRUE)
+
+m1_pred     <- predict( m1, newdata = test )
+
+m2_pred     <- predict( m2, newdata = test )
+
+m1_pred_mse <- mean( ( test$this.CF.scaled - m1_pred )^2 )
+
+m2_pred_mse <- mean( ( test$this.CF.scaled - m2_pred )^2 )
+ 
+cat( "m1 pred mse = ", m1_pred_mse ,
+     "m2 pred mse = ", m2_pred_mse )
+
+
+
+
+ticker_mask      <- cash_flow_curr_prev$Ticker == "NVDA"
+
+ticker_max_year <- max( cash_flow_curr_prev$this.year[ ticker_mask ] )
+
+recent_year_mask <- cash_flow_curr_prev$this.year == ticker_max_year
+
+new_data         <- cash_flow_curr_prev[ ticker_mask & recent_year_mask , ]
+
+print( "linear pred" )
+
+predict( m1, newdata = new_data
+        ) * this.CF_scaled$scale[ 1 ] + this.CF_scaled$center[ 1 ]
+
+print( "rf pred" )
+
+predict( m2, newdata = new_data
+         ) * this.CF_scaled$scale[ 1 ] + this.CF_scaled$center[ 1 ]
+
+
+```
+
+
+```{r}
+
+forecast <- function(
+    # function to forecast cashflow into the future with a list of tickers
+    # returns dataframe of forecasted cashflow
+  tickers,         # array: list of strings, each representing a ticker
+  num_years_ahead, # int: number of years to forecast
+  history,         # data.frame: dataframe of historical cash flow
+  model            # lm object: model used to forecast, should be trained using history 
+  ){
+
+  predictions <- data.frame(Ticker         = character() ,
+                            prev.year      = integer() ,
+                            this.year      = integer() ,
+                            prev.CF        = numeric() ,
+                            this.CF        = numeric() ,
+                            prev.CF.scaled = numeric() ,
+                            this.CF.scaled = numeric() )
+  
+  h <- num_years_ahead
+  
+  k <- 1
+  
+  for( ticker in tickers ){
+    
+    if( k %% h == 1 ){
+      
+      ticker_mask      <- cash_flow_curr_prev$Ticker == ticker
+      
+      ticker_max_year  <- max( cash_flow_curr_prev$this.year [ ticker_mask ] )
+      
+      recent_year_mask <- cash_flow_curr_prev$this.year == ticker_max_year
+      
+      starting_year    <- cash_flow_curr_prev[ ticker_mask & recent_year_mask , ]
+      
+    } 
+    
+    
+    for( future_step in 1:h ){
+      
+      if( k %% h == 1 ){
+      
+          new_data <- starting_year
+      
+          }
+      
+      new_data$prev.year      <- new_data$prev.year + 1
+      
+      new_data$this.year      <- new_data$this.year + 1
+      
+      new_data$prev.CF        <- new_data$this.CF
+      
+      new_data$prev.CF.scaled <- new_data$this.CF.scaled
+      
+      
+      
+      
+      pred_i_scaled           <- predict( m1 , newdata = new_data )
+      
+      pred_i_unscaled         <- pred_i_scaled * this.CF_scaled$scale[ 1 ] + 
+        this.CF_scaled$center[ 1 ]
+      
+      new_data$this.CF        <- pred_i_unscaled
+      
+      new_data$this.CF.scaled <- pred_i_scaled
+      
+      predictions[ k , ] <- new_data
+      
+      k <- k + 1
+       
+    }
+    predictions$Ticker[ ( k - h ):( k - 1 ) ] <- ticker
+    
+    
+  }
+  
+  predictions$Ticker <- as.factor( predictions$Ticker )
+  
+  results <- predictions
+  
+  return( results )
+
+}
+
+tickers <- unique( cash_flow$Ticker )
+
+predictions <- forecast( tickers         = tickers , 
+                         num_years_ahead = 5 , 
+                         history         = cash_flow_curr_prev , 
+                         model           = m1)
+
+history_forecast <- bind_rows( cash_flow_curr_prev , predictions )
+
+ggplot( data =  history_forecast, 
+       aes( x   = this.year, 
+            y   = this.CF, 
+            col = Ticker
+            )
+       ) + 
+  geom_line() + 
+  xlab( "Calendar Year" ) + 
+  ylab( "Free Cash Flow" ) + 
+  ggtitle( "Cash Flow per Year" )
+  
+
+```
+
+```{r}
+
+DCF <- function(
+    CF_t,         # array: array of precalculated CF_t
+    Discount_Rate # float: discount rate of each year, WACC is used here
+){
+  
+  DCF_partials <- cumprod( CF_t / ( 1 + Discount_Rate ) )
+  
+  DCF <- sum( CF_t )
+  
+  result <-  DCF
+  
+  return( result )
+}
+
+
+tickers <- unique( cash_flow$Ticker )
+
+wacc_list <- read.csv( "../csv_data/wacc_list.csv" )
+
+dcf_list <- rep( NA , length( tickers ) )
+
+names(dcf_list) <- tickers
+
+k <- 1
+
+for( ticker in tickers ){
+  
+  wacc <- wacc_list$wacc[ wacc_list$Ticker == ticker ]
+  
+  CF_t <- predictions$this.CF[ predictions$Ticker == ticker]
+  
+  dcf_list[ k ] <- DCF(CF_t = CF_t , Discount_Rate = wacc )
+  
+  k <- k + 1
+} 
+
+billion <- 1000000000
+
+
+# copied from yahoo finance
+num_shares_B <- c( 24.6, 1.62, 5.19, 0.3932, 1.11, 0.82797, 5.62, 15.73, 2.19, 3.19, 0.77177, 0.22485, 2.36, 1.26 )
+
+current_value_per_share <- c( 1.28, 3.73, 79, 12.76, 7.56, 9.13, 8.75, 4.38, 22.91, 8.42, 0.6, 9.88, 2.89, 10.43 )
+
+
+
+
+dcf_per_share <- dcf_list / ( num_shares_B * billion ) 
+
+percent_change <- ( dcf_per_share / current_value_per_share - 1 )*100
+
+cash_per_share <- cbind( num_shares_B, current_value_per_share, dcf_per_share , percent_change)
+
+cash_per_share
+
+```
+
+
+
+

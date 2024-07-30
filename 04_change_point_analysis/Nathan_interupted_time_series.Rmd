@@ -1,0 +1,234 @@
+---
+title: "Stat 417 Project Change Point Analysis"
+author: "Nathan Lam"
+date: "2024-07-31"
+output: pdf_document
+---
+
+```{r libraries}
+
+rm( list = ls() )
+
+library( ggplot2 )
+
+library( dplyr )
+
+path <- '~/../Nextcloud/02 Projects/School/2024 Summer UCLA Stat 417 - Stat Models in Finance/HW2/'
+
+
+```
+
+
+
+```{r searches}
+
+searches <- read.csv( "data/LLM_searches.csv" )
+
+colnames( searches ) <- c( "Week", "ChatGPT", "AI", "Artificial.Intelligence" )
+
+searches$ChatGPT[ searches$ChatGPT == "<1" ] <- 0
+
+searches$ChatGPT <- as.numeric( searches$ChatGPT )
+
+searches.unpivot <- cbind( searches$Week, stack( searches[ -1 ] ) )
+
+colnames( searches.unpivot ) <- c( "Week", "Searches", "Search.Term" )
+
+searches.unpivot$Search.Term <- as.character( searches.unpivot$Search.Term )
+
+searches.unpivot$Week <- as.Date( searches.unpivot$Week )
+
+ggplot( data = searches.unpivot, 
+        aes( x = Week, y = Searches, col = Search.Term) ) + 
+  geom_line() +
+  labs( title = "Searches over Time per Search Term", 
+        col = "Search Term" ) + 
+  theme( legend.position = c( 0.87, 0.18 ) )
+
+```
+
+
+
+```{r TS peak}
+
+find_peaks <- function(
+    ticker,                   # str: Ticker representing a company/entity
+    do_print_summary = FALSE, # bool: should the model summary be printed?
+    peaks_df = data.frame()   # dataframe: df of dates when stock prices peaked per company
+    
+    ){
+  
+  has_peaks_df <- nrow( peaks_df ) > 0
+  
+  tick <- read.csv( paste0( "data/", ticker, "_stock_history.csv" ) )
+
+  tick$Date <- as.Date( tick$Date, format = "%Y-%m-%d" )
+  
+  tick$gpt_release <- 1 * ( tick$Date > "2022-11-30" )
+  
+  if( has_peaks_df ){
+    tick$second_peak <- 1 * ( tick$Date > peaks_df$Date[ peaks_df$Ticker == ticker ] )
+  }
+  
+  tick <- tick[ ( tick$Date >= "2010-01-01" ), ]
+  
+  
+  recent_change_ind <- which.max( tick$Adj.Close )
+  
+  recent_change <- tick$Date[ recent_change_ind ]
+  
+  shift_back <- 400
+  
+  if( recent_change_ind - shift_back < 0){
+    shift_back <- 0
+  }
+  
+  prior_change_ind <- which.max( tick$Adj.Close[ 1:( recent_change_ind - shift_back ) ] )
+  
+  if( has_peaks_df ){
+    model <- lm( log( Adj.Close ) ~ Date * second_peak * gpt_release, data = tick )
+  } else{
+    model <- lm( log( Adj.Close ) ~ Date * gpt_release, data = tick )
+  }
+  
+  plot( tick$Date, tick$Adj.Close, type="l",
+        main = ticker,
+        xlab = "Date",
+        ylab =  "Adjusted Closing Price" )
+  #points( tick$Date[ recent_change_ind ], tick$Adj.Close[ recent_change_ind ],
+  #        type = "p",
+  #        col = "red" )
+  points( tick$Date[ prior_change_ind ], tick$Adj.Close[ prior_change_ind ],
+          type = "p",
+          col = "red" )
+  lines( tick$Date, exp( model$fitted.values ), col="red" )
+  
+  
+  if( do_print_summary ){
+    
+    print( ticker )
+    
+    print( summary( model ) )
+    
+  }  
+
+  tick$Date <- as.character( tick$Date )
+  
+  tick$Ticker <- ticker
+  
+  result <- tick[ prior_change_ind,]
+  
+  return( result )
+  
+}
+
+prior_change_df <- data.frame(Date = character(),
+                              Ticker = character() ,
+                              Adj.Price = numeric())
+
+tickers <- c("NVDA", "AMD", "TSM", "ASML", "MU", "AMAT",        
+             "GOOG", "AAPL", "META", "TSLA", "DUK",        
+             "GLD", "X", "PG", "TLT","CVS", "VGIT", "GOVT")
+
+k <- 1
+
+for( ticker in tickers ){
+  
+  prior <- find_peaks( ticker )
+  
+  prior_change_df[ k,] <- prior[, c( "Date", "Ticker", "Adj.Close" ) ]
+  
+  k <- k + 1
+  
+  }
+
+
+for( ticker in tickers ){
+  
+  two_change_points <- find_peaks( ticker, TRUE, prior_change_df)
+  
+}
+
+
+# chat gpt not significant to AAPL, maybe not DUK, PG, maybe not VGIT
+
+```
+
+
+
+
+```{r TS stock}
+
+tickers <- c("NVDA", "AMD", "TSM", "ASML", "MU", "AMAT",        
+           "GOOG", "AAPL", "META", "TSLA", "DUK",        
+           "GLD", "X", "PG", "TLT","CVS", "VGIT", "GOVT")
+
+company <- tickers[ 7 ]
+
+tick <- read.csv(paste0("data/",company,"_stock_history.csv"))
+
+tick$Date <- as.Date(tick$Date, format="%Y-%m-%d")
+
+tick$gpt_release <- 1 * (tick$Date > "2022-11-30")
+
+tick$second_peak <- 1 * ( tick$Date > prior_change_df$Date[ prior_change_df$Ticker == company ] )
+
+tick <- tick[tick$Date > "2010-01-01",]
+
+#pgram(tick$Adj.Close)
+
+```
+
+
+
+```{r TS model}
+
+m1 <- lm(log(Adj.Close) ~ Date, data=tick)
+
+m2 <- lm(log(Adj.Close) ~ Date + gpt_release, data=tick)
+
+m3 <- lm(log(Adj.Close) ~ Date*gpt_release, data=tick)
+
+m4 <- lm(log(Adj.Close) ~ Date*second_peak*gpt_release, data=tick)
+
+summary(m4)
+
+plot(tick$Date, tick$Adj.Close, type="l", main=company, 
+     xlab = "Date", ylab = "Adjusted Closing Price"); lines(tick$Date, exp(m4$fitted.values), col="red")
+
+
+
+
+
+```
+
+
+
+```{r}
+
+tickers <- c("NVDA", "AMD", "TSM", "ASML", "MU", "AMAT",        
+           "GOOG", "AAPL", "META", "TSLA", "DUK",        
+           "GLD", "X", "PG", "TLT","CVS", "VGIT", "GOVT")
+
+all_tickers <- data.frame(Date = character(),
+                          Ticker = character() ,
+                          Adj.Price = numeric()
+)
+
+for( ticker in tickers ){
+  
+  tick <- read.csv(paste0("data/",company,"_stock_history.csv"))
+
+  tick$Date <- as.Date(tick$Date, format="%Y-%m-%d")
+  
+  tick$gpt_release <- 1 * (tick$Date > "2022-11-30")
+  
+  
+  
+}
+
+
+```
+
+
+
