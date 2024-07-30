@@ -7,19 +7,23 @@ output:
 ---
 
 
-```{r}
+```{r preamble}
 
-library( quantmod )
+rm( list = ls() )
 
-library( finreportr )
+# library( quantmod )
 
-library( dplyr )
+# library( finreportr )
 
-library( randomForest )
+# library( randomForest )
 
 library( ggplot2 )
 
+library( dplyr )
+
 abs_path <- 'C:/Users/nthnt/Nextcloud/02 Projects/School/2024 Summer UCLA Stat 417 - Stat Models in Finance/FModel/'
+
+data_path <- paste0( abs_path, "/csv_data/" )
 
 ```
 
@@ -54,7 +58,7 @@ scale_scaler <- function(
 
 set.seed( 1 )
 
-cash_flow                     <- read.csv( "../csv_data/cash_flow.csv" )
+cash_flow                     <- read.csv( paste0( data_path, "01_cash_flow.csv" ) )
 
 cash_flow$this.year           <- as.numeric( substr( cash_flow$index , 1 , 4 ) )
 
@@ -273,7 +277,7 @@ DCF <- function(
 
 tickers <- unique( cash_flow$Ticker )
 
-wacc_list <- read.csv( "../csv_data/wacc_list.csv" )
+wacc_list <- read.csv( paste0( data_path, "00_wacc_list.csv" ) )
 
 dcf_list <- rep( NA , length( tickers ) )
 
