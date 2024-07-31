@@ -15,18 +15,16 @@ monte.carlo.portfolio <- function(
   result          <- matrix( NA, nrow=iteration, ncol=n+3 )
   
   for(i in 1:iteration){
-    #
+    
     tech.w        <- runif( 11, 0, 1000 )
+    
     tech.w        <- ( tech.w / sum( tech.w ) ) * 0.80
     
-    hedge.w        <- runif( (n- 11 ), 0, 1000 )
-    hedge.w        <- ( hedge.w / sum( hedge.w ) ) * 0.2
+    hedge.w       <- runif( (n- 11 ), 0, 1000 )
+    
+    hedge.w       <- ( hedge.w / sum( hedge.w ) ) * 0.2
     
     w             <- c( tech.w, hedge.w )
-    #
-    #w             <- runif( n, 0, 1000 )
-    
-    #w             <- w / sum( w )
     
     ret           <- w %*% mu.ret
     
@@ -36,7 +34,7 @@ monte.carlo.portfolio <- function(
     
     sharpe.ratio  <- ( ret - risk.free.rate ) / std.dev
     
-    result[i, ] <- c( w, ret, sqrt( std.dev ), sharpe.ratio )
+    result[i, ]   <- c( w, ret, sqrt( std.dev ), sharpe.ratio )
     
   }
   
