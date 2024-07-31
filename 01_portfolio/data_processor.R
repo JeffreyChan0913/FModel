@@ -167,7 +167,7 @@ future_return <- function(
   
   folder           = "data",
   
-  baseline.tickers = c("SPY", "^GSPC")
+  baseline.tickers = c( "SPY", "^GSPC" )
   
 ) {
   
@@ -213,7 +213,7 @@ future_return <- function(
   
   return.package            <- as.matrix( all.ret[ , tickers ] )
   
-  return.package            <- return.package %*% t(portfolio.w)
+  return.package            <- return.package %*% t( portfolio.w )
   
   date.col                  <- as.Date( date.col[-1] )
   
@@ -225,7 +225,7 @@ future_return <- function(
                                            
   )
   
-  colnames(return.package)  <- c("Date", "portfolio.return", "SPY", "S&P500")
+  colnames(return.package)  <- c( "Date", "portfolio.return", "SPY", "S&P500" )
   
   return( return.package )
   
