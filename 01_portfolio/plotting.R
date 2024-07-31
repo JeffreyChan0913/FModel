@@ -122,30 +122,18 @@ plot.w <- function(
   hedge.t
   
 ) {
-  # 
-  # colors <- setNames( c( rep( "steelblue", length( t.tickers ) ),
-  #                        
-  #                        rep( "darkorange", length( hedge ) ) ),
-  #                    
-  #                     c( t.tickers, hedge )
-  #                     
-  #                     )
-  # 
-  # labels <- c( rep( "Tech", length(t.tickers ) ), rep( "Hedging", length( hedge.t ) ) )
-  # 
-  # color.labels <- setNames( labels, c( t.tickers, hedge.t ) )
+ 
+  data              <- data.frame (as.numeric( x ) , colnames( x ) )
   
-  data <- data.frame (as.numeric( x ) , colnames( x ) )
+  colnames( data )  <- c( "w", "ticker" )
   
-  colnames( data ) <- c( "w", "ticker" )
+  data              <- data[ order( data$w, decreasing=T ), ]
   
-  data <- data[ order( data$w, decreasing=T ), ]
+  data$group        <- ifelse( data$ticker %in% t.tickers, "Tech", "Hedge" )
   
-  data$group <- ifelse( data$ticker %in% t.tickers, "Tech", "Hedge" )
+  data$group        <- factor( data$group, levels=c("Tech", "Hedge") )
   
-  data$group <- factor( data$group, levels=c("Tech", "Hedge") )
-  
-  group.colors <- c( "Tech" = "steelblue", "Hedge" = "darkorange" )
+  group.colors      <- c( "Tech" = "steelblue", "Hedge" = "darkorange" )
 
   ggplot( data, aes( x=w, y=reorder( ticker, w ), fill = group ) ) +
     
@@ -173,26 +161,22 @@ plot.frontier <- function(
   
   max.sharpe.ratio.index <- which.max(frontier.data$sharpe.ratio)
   
-  sharpe.ratio          <- frontier.data[ max.sharpe.ratio.index, 
+  sharpe.ratio           <- frontier.data[ max.sharpe.ratio.index, 
                                            
                                            "sharpe.ratio"
                                          ]
   
-  portfolio.sigma       <- frontier.data[ max.sharpe.ratio.index, "sigma" ]
+  portfolio.sigma        <- frontier.data[ max.sharpe.ratio.index, "sigma" ]
   
-  portfolio.ret         <- frontier.data[ max.sharpe.ratio.index, "ret" ]
+  portfolio.ret          <- frontier.data[ max.sharpe.ratio.index, "ret" ]
 
   ggplot( frontier.data, aes( x=sigma, y=ret, color=sharpe.ratio) ) +
     
     geom_scattermore( alpha=0.3 ) + 
     
-    #geom_scattermore( x=portfolio.sigma, y=portfolio.ret, color="#F75D59", pointsize=3.5 ) +
-    
     geom_scattermore( x=portfolio.sigma, y=portfolio.ret, color="#800000", pointsize=6 ) +
 
     scale_x_continuous( breaks=seq( 0.3, 0.6, 0.1 ), limits=c( 0.3, 0.6 ) )  + 
-    
-    # scale_y_continuous( breaks=seq( 0.1, 0.5 , 0.1 ), limits=c( 0.1, 0.5 ) )  + 
     
     labs( x="Portfolio Standard Deviation", y="Portfolio Expected Return" ) +
     
@@ -293,8 +277,3 @@ plot.ret.CVaR <- function(
     th
   
 }
-
-
-
-
-
