@@ -1,6 +1,6 @@
 rm( list = ls( all.names=T ) )
 
-options( warn=-1)
+options( warn=-1 )
 
 try( dev.off( dev.list()["RStudioGD"] ), silent=TRUE )
 
