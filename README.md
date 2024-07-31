@@ -2,6 +2,8 @@
 
 This repository contains a project focused on portfolio optimization and financial analysis as the project for Stats 417 (Statistical Models in Finance) of Summer 2024 at UCLA. The project includes portfolio construction, risk assessment, and performance metrics of the portfolio, as well as additional analyses such as debt analysis (credit risk), Discounted Cash Flow (DCF) analysis, and interrupted time series analysis related to technology stocks that we have curated from our portfolio.
 
+Data was collected through Yahoo Finance via API using the *yfinance* library in Python. Python was only utilized for extracting data so the analysis can be conducted in R. 
+
 ## Project Overview
 
 The main components of this project are:
