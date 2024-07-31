@@ -14,7 +14,7 @@ required.pkgs <- c( "quantmod", "reticulate", "dplyr", "tidyverse",
 
 pacman::p_load( required.pkgs, character.only=T )
 
-source( "../portfolio/data_processor.R" )
+source( "../01_portfolio/data_processor.R" )
 
 source( "KMV_Merton.R" )
 
@@ -26,7 +26,7 @@ period <- 1
 
 kmv.data            <- read.csv( "kmv23data.csv" )
 
-tickers             <- read.csv( "../portfolio_output/tech_tickers.csv" )
+tickers             <- read.csv( "../01_portfolio/tech_tickers.csv" )
 
 tickers             <- tickers[c(1:11), ]
 
@@ -36,7 +36,7 @@ kmv.data <- kmv.data[, -1]
 
 ret                 <- get.current.return( tickers, "2023-01-01", "2024-01-01", T ) * 252
 
-last.trading.price.date23 <- as.Date("2023-12-29")
+last.trading.price.date23 <- as.Date( "2023-12-29" )
 
 i = 1
 
@@ -46,7 +46,7 @@ for( ticker in tickers ){
   
   temp           <- c()
   
-  file           <- file.path( "../portfolio/data" , paste0( ticker, ".csv" ) )
+  file           <- file.path( "../01_portfolio/data" , paste0( ticker, ".csv" ) )
   
   data           <- read.csv( file )
   
