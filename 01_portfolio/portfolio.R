@@ -2,9 +2,9 @@ rm( list = ls(all.names=T) )
 
 options(warn=-1)
 
-try(dev.off(dev.list()["RStudioGD"]),silent=TRUE)
+try( dev.off(dev.list()["RStudioGD"]), silent=TRUE )
 
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+setwd( dirname(rstudioapi::getSourceEditorContext()$path) )
 
 required.pkgs <- c( "quantmod", "reticulate", "dplyr", "tidyverse",
                    
@@ -13,7 +13,7 @@ required.pkgs <- c( "quantmod", "reticulate", "dplyr", "tidyverse",
                     "scattermore", "ggplot2", "MASS", "gridExtra"
                   )
 
-pacman::p_load(required.pkgs, character.only=T)
+pacman::p_load( required.pkgs, character.only=T )
 
 source( "portfolio_mc.R" )
 
@@ -29,20 +29,20 @@ tickers  <- c( "NVDA", "AMD", "TSM", "ASML", "MU", "AMAT",
               
               )
 
-t.tickers <- c("NVDA", "AMD", "TSM", "ASML", "MU", "AMAT", "GOOG", "AAPL", "META", "TSLA", "DUK")
+t.tickers <- c( "NVDA", "AMD", "TSM", "ASML", "MU", "AMAT", "GOOG", "AAPL", "META", "TSLA", "DUK" )
 
-hedge <- c("GLD", "X", "PG", "TLT","CVS", "VGIT", "GOVT")
+hedge <- c( "GLD", "X", "PG", "TLT","CVS", "VGIT", "GOVT" )
 
 
-baseline.tickers              <- c("SPY", "^GSPC")
+baseline.tickers              <- c( "SPY", "^GSPC" )
 
-startDate                     <- as.Date("2015-01-01")
+startDate                     <- as.Date( "2015-01-01" )
 
-endDate                       <- as.Date("2020-01-01")
+endDate                       <- as.Date( "2020-01-01" )
 
 stock.data( c( tickers, baseline.tickers ), update=F )
 
-data.package                  <- process.data(tickers)
+data.package                  <- process.data( tickers )
 
 stock.stats.annaual.ret       <- data.package[[1]]
 
@@ -64,7 +64,7 @@ system.time(
                                                    
                                                    n.cores = 10
                                                    
-  )
+                                                )
   
 )
 
@@ -82,7 +82,7 @@ sp500.sigma <- var( market.ret.D[ , 2] ) * sqrt( 252 )
 
 plot.frontier( frontier.data )
 
-ggsave("frontier.png", width=8, height=5, dpi=320, bg="white" )
+ggsave( "frontier.png", width=8, height=5, dpi=320, bg="white" )
 
 portfolio.weights               <- result.mc[ which.max( result.mc$sharpe.ratio ), ]
 
@@ -100,7 +100,7 @@ future.package                  <- future_return( tickers, endDate,
                                                  
                                                   baseline.tickers = baseline.tickers
                                                  
-)
+                                                )
 
 plot.cum.ret( future.package, tickers )
 
@@ -110,7 +110,7 @@ plot.w( portfolio.weights , tickers )
 
 ggsave( "w.png", width=8, height=5, dpi=320, bg="white" )
 
-options(scipen = 6)
+options( scipen = 6 )
 
 portfolio.performance <- get.performance.metric( tickers, startDate, endDate,
 
@@ -142,7 +142,7 @@ VaR.cutoff.95                                 <- portfolio.result[["VaR"]][1,1]
 
 VaR.cutoff.99                                 <- portfolio.result[["VaR"]][2,1]
 
-HHI                                           <- sum(portfolio.weights*portfolio.weights)
+HHI                                           <- sum( portfolio.weights*portfolio.weights )
 
 portfolio.result[["HHI"]]                     <- HHI
 
@@ -152,11 +152,11 @@ ggsave("var.png", width=8, height=5, dpi=320, bg="white" )
 
 plot.ret.CVaR( as.data.frame( daily.ret ), VaR.cutoff.95, portfolio.result$CVaR[1,1], 0.05 )
 
-ggsave("cvar95.png", width=8, height=5, dpi=320, bg="white" )
+ggsave( "cvar95.png", width=8, height=5, dpi=320, bg="white" )
 
 plot.ret.CVaR( as.data.frame( daily.ret ), VaR.cutoff.99, portfolio.result$CVaR[2,1], 0.01 )
 
-ggsave("cvar99.png", width=8, height=5, dpi=320, bg="white" )
+ggsave( "cvar99.png", width=8, height=5, dpi=320, bg="white" )
 
 lapply( portfolio.result, round, 6 )
 
@@ -179,17 +179,17 @@ for( ticker in tickers ){
   
 }
 
-df <- as.data.frame( do.call( cbind, df ) )
+df          <- as.data.frame( do.call( cbind, df ) )
 
-df.h <- df[ , hedge]
+df.h        <- df[ , hedge]
 
-df.t <- df[ , t.tickers]
+df.t        <- df[ , t.tickers]
 
-df$Date <- k$Date
+df$Date     <- k$Date
 
-df.t$Date <- k$Date
+df.t$Date   <- k$Date
 
-df.h$Date <- k$Date
+df.h$Date   <- k$Date
 
 df.transform.h           <- pivot_longer( df.h, 
                                         
@@ -209,7 +209,7 @@ df.transform.t           <- pivot_longer( df.t,
                                           
                                           values_to="Price"
                                           
-)
+                                        )
 
 fontsize <- 12
 
@@ -223,11 +223,11 @@ sth <-   theme_minimal( ) +
          
          axis.text=element_text( size=fontsize ), 
          
-         legend.title=element_text(size=12),
+         legend.title=element_text( size=12 ),
          
-         legend.text=element_text(size=12),
+         legend.text=element_text( size=12 ),
          
-         legend.key.size=unit(0.8,"cm"), 
+         legend.key.size=unit( 0.8,"cm" ), 
          
          legend.position="right"
          
@@ -236,20 +236,20 @@ sth <-   theme_minimal( ) +
 
 ggplot( df.transform.t, aes( x=Date, y=Price, color=Ticker ) ) +
   
-  ggtitle("Tech Stock Price") +
+  ggtitle( "Tech Stock Price" ) +
   
   geom_line( size=0.8 ) +
   
   sth
 
-ggsave("Techstockprice.png", width=8, height=5, dpi=320, bg="white")
+ggsave( "Techstockprice.png", width=8, height=5, dpi=320, bg="white" )
 
-ggplot(df.transform.h, aes( x=Date, y=Price, color=`Hedging Ticker` )) +
+ggplot( df.transform.h, aes( x=Date, y=Price, color=`Hedging Ticker` ) ) +
   
-  ggtitle("Stock Price for Hedging") +
+  ggtitle( "Stock Price for Hedging" ) +
   
-  geom_line( size= 0.8) +
+  geom_line( size= 0.8 ) +
   
   sth
 
-ggsave("Techstockprice2.png", width=8, height=5, dpi=320, bg="white")
+ggsave( "Techstockprice2.png", width=8, height=5, dpi=320, bg="white" )
